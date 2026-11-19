@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>מצב התור באונבורדינג</title>
+<style>
+*{margin:0;box-sizing:border-box}
+html,body{height:100%;background:#f5f5f7;overflow:hidden;cursor:none;font-family:Heebo,system-ui,sans-serif}
+#img{position:fixed;inset:0;width:100vw;height:100vh;object-fit:contain;opacity:0;transition:opacity .6s}
+#img.on{opacity:1}
+#st{position:fixed;left:1.2vw;bottom:1vh;font-size:1.1vw;color:#6e6e73;background:rgba(255,255,255,.75);padding:.3vw .8vw;border-radius:99px}
+#st.old{color:#b00012;font-weight:700}
+#msg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:2.4vw;color:#167398;font-weight:800;line-height:1.5}
+</style>
+</head>
+<body>
+<img id="img" alt="">
+<div id="msg">מצב התור באונבורדינג<br><span style="font-size:1.4vw;color:#6e6e73;font-weight:400">טוען…</span></div>
+<div id="st"></div>
+<script>
+const SALT='d65bd9e778a8bb45',IT=600000;
+const b64=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+const $=id=>document.getElementById(id);
+let key,last='',upd=null;
+const msg=t=>{$('msg').innerHTML=t;$('msg').style.display='flex'};
+const get=()=>{try{return localStorage.getItem('oq_code')}catch(e){return null}};
+const put=v=>{try{localStorage.setItem('oq_code',v)}catch(e){}};
+async function derive(code){
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(code),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:new TextEncoder().encode(SALT),iterations:IT,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+}
+function ask(err){
+  document.body.style.cursor='auto';
+  msg('<div>מצב התור באונבורדינג<br><span style="font-size:1.4vw;color:#6e6e73;font-weight:400">'+(err||'הזן קוד פתיחה')+'</span><br>'+
+  '<input id="c" inputmode="numeric" autocomplete="off" style="font:800 3vw Heebo,sans-serif;width:14vw;text-align:center;margin-top:1.5vw;border:.2vw solid #167398;border-radius:1vw;padding:.4vw">'+
+  '<br><button id="b" style="font:700 1.6vw Heebo,sans-serif;margin-top:1vw;padding:.5vw 2.5vw;border:0;border-radius:99px;background:#167398;color:#fff">פתח</button></div>');
+  const go=()=>{put($('c').value.trim());key=null;last='';tick()};
+  $('b').onclick=go;$('c').onkeydown=e=>e.key==='Enter'&&go();$('c').focus();
+}
+async function tick(){
+  const code=get(); if(!code)return ask();
+  try{
+    key=key||await derive(code);
+    const r=await fetch('d.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok){if(!last)msg('מחכה לעדכון הראשון של התור…');return}
+    const j=await r.json();
+    if(j.iv!==last){
+      let pt;try{pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(j.iv)},key,b64(j.ct))}catch(e){put('');key=null;return ask('הקוד לא נכון — נסה שוב')}
+      const url=URL.createObjectURL(new Blob([pt],{type:'image/png'}));
+      const im=new Image();im.onload=()=>{const o=$('img').src;$('img').src=url;$('img').classList.add('on');$('msg').style.display='none';document.body.style.cursor='none';if(o.startsWith('blob:'))URL.revokeObjectURL(o)};im.src=url;
+      last=j.iv;upd=j.updated_at?new Date(j.updated_at):null;
+    }
+  }catch(e){}
+  if(upd){const m=Math.round((Date.now()-upd)/60000);
+    $('st').textContent='עודכן '+upd.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})+' · '+upd.toLocaleDateString('he-IL',{weekday:'long',day:'2-digit',month:'2-digit'});
+    $('st').className=m>180?'old':''}
+}
+tick();setInterval(()=>{if(get())tick()},30000);
+setTimeout(()=>location.reload(),6*3600*1000);
+if('wakeLock'in navigator){const w=()=>navigator.wakeLock.request('screen').catch(()=>{});w();document.addEventListener('visibilitychange',()=>document.visibilityState==='visible'&&w())}
+</script>
+</body>
+</html>
