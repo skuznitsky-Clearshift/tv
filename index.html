@@ -34,11 +34,18 @@ async function derive(code){
 }
 function ask(err){
   document.body.style.cursor='auto';
+  const k=[1,2,3,4,5,6,7,8,9,'⌫',0,'✓'].map(x=>'<button class="k" data-k="'+x+'">'+x+'</button>').join('');
   msg('<div>מצב התור באונבורדינג<br><span style="font-size:1.4vw;color:#6e6e73;font-weight:400">'+(err||'הזן קוד פתיחה')+'</span><br>'+
   '<input id="c" inputmode="numeric" autocomplete="off" style="font:800 3vw Heebo,sans-serif;width:14vw;text-align:center;margin-top:1.5vw;border:.2vw solid #167398;border-radius:1vw;padding:.4vw">'+
-  '<br><button id="b" style="font:700 1.6vw Heebo,sans-serif;margin-top:1vw;padding:.5vw 2.5vw;border:0;border-radius:99px;background:#167398;color:#fff">פתח</button></div>');
-  const go=()=>{put($('c').value.trim());key=null;last='';tick()};
-  $('b').onclick=go;$('c').onkeydown=e=>e.key==='Enter'&&go();$('c').focus();
+  '<div id="pad" style="display:grid;grid-template-columns:repeat(3,5vw);gap:.6vw;justify-content:center;margin-top:1.2vw">'+k+'</div>'+
+  '<button id="b" style="font:700 1.6vw Heebo,sans-serif;margin-top:1vw;padding:.5vw 2.5vw;border:0;border-radius:99px;background:#167398;color:#fff">פתח</button></div>');
+  const c=$('c');
+  const go=()=>{put(c.value.trim());key=null;last='';tick()};
+  $('b').onclick=go;c.onkeydown=e=>e.key==='Enter'&&go();
+  document.querySelectorAll('#pad .k').forEach(b=>{b.style.cssText='font:800 2vw Heebo,sans-serif;padding:.6vw 0;border:.15vw solid #167398;border-radius:.8vw;background:#fff;color:#167398;cursor:pointer';
+    b.onclick=()=>{const v=b.dataset.k;if(v==='⌫')c.value=c.value.slice(0,-1);else if(v==='✓')go();else c.value+=v}});
+  document.onkeydown=e=>{if(document.activeElement===c)return;if(/^[0-9]$/.test(e.key))c.value+=e.key;else if(e.key==='Backspace')c.value=c.value.slice(0,-1);else if(e.key==='Enter'&&!document.activeElement.closest('#pad'))go()};
+  setTimeout(()=>c.focus(),50);
 }
 async function tick(){
   const code=get(); if(!code)return ask();
@@ -58,6 +65,7 @@ async function tick(){
     $('st').textContent='עודכן '+upd.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})+' · '+upd.toLocaleDateString('he-IL',{weekday:'long',day:'2-digit',month:'2-digit'});
     $('st').className=m>180?'old':''}
 }
+{const h=location.hash.match(/^#(\d{3,})$/);if(h){put(h[1]);history.replaceState(null,'',location.pathname)}}
 tick();setInterval(()=>{if(get())tick()},30000);
 setTimeout(()=>location.reload(),6*3600*1000);
 if('wakeLock'in navigator){const w=()=>navigator.wakeLock.request('screen').catch(()=>{});w();document.addEventListener('visibilitychange',()=>document.visibilityState==='visible'&&w())}
