@@ -87,10 +87,15 @@ function vch(r) {
   return `<div class="chips"><span class="lbl">שובר:</span>${chip('$' + Number(r.voucher_usd).toLocaleString('en-US'), 'ok')}${r.voucher_note ? `<span class="lbl">${esc(r.voucher_note)}</span>` : ''}</div>`;
 }
 const ctl = (r, col) => !ADMIN || !col ? '' : `<div class="ctl">${col === 'queue' ? '<button data-a="up" title="קדם">▲</button><button data-a="down" title="הורד">▼</button><button data-a="out" title="הוצא מהתור">⤓</button>' : '<button data-a="in" title="הכנס לתור">⤒ לתור</button><button data-a="up">▲</button><button data-a="down">▼</button>'}</div>`;
-const mgr = r => OV[rid(r)] ? `<div class="mgr">התערבות מנהל${ADMIN ? ' <button data-a="reset" title="החזר למקום הטבעי">✕</button>' : ''}</div>` : '';
+const moved = r => { const o = OV[rid(r)]; return !!(o && (o.col || o.key != null)) };
+// תיוג חודש ע"י מנהל (22.11): לאיזה חודש החשבון נספר בסגירות — החודש / החודש הבא
+const ym = (d, add = 0) => { const x = new Date(d.toLocaleString('en-US', tz)); x.setDate(1); x.setMonth(x.getMonth() + add); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') };
+const mtag = r => { const m = OV[rid(r)] && OV[rid(r)].m; if (!m) return ''; const [y, mo] = m.split('-').map(Number); return `<div class="mtag">📅 נספר ל${MONTHS[mo - 1]}</div>` };
+const mctl = r => { if (!ADMIN) return ''; const m = OV[rid(r)] && OV[rid(r)].m, a = ym(new Date()), b = ym(new Date(), 1); const btn = (v, t) => `<button data-m="${v}" class="${m === v ? 'on' : ''}">${t}</button>`; return `<div class="ctl mctl">${btn(a, 'החודש')}${btn(b, 'חודש הבא')}${m ? '<button data-m="">✕</button>' : ''}</div>` };
+const mgr = r => moved(r) ? `<div class="mgr">התערבות מנהל${ADMIN ? ' <button data-a="reset" title="החזר למקום הטבעי">✕</button>' : ''}</div>` : '';
 
 function card(cls, r, inner, col) {
-  return `<div class="card ${cls}${OV[rid(r)] ? ' glow' : ''}" data-id="${esc(rid(r))}" data-col="${col || ''}">${mgr(r)}${inner}${ctl(r, col)}</div>`;
+  return `<div class="card ${cls}${moved(r) ? ' glow' : ''}" data-id="${esc(rid(r))}" data-col="${col || ''}">${mgr(r)}${mtag(r)}${inner}${ctl(r, col)}${mctl(r)}</div>`;
 }
 function render() {
   const { opened, work, queue, notq } = columns();
@@ -111,7 +116,7 @@ function render() {
   $('grid').style.gridTemplateColumns = L.map((x, i) => x.length ? sub[i] + 'fr' : '.6fr').join(' ');
   const col = (t, s, c, cards, n) => `<section><div class="head" style="--c:${c}"><h2>${t}</h2><span class="cnt">${cards.length}</span></div><p class="sub">${s}</p><div class="cards" style="grid-template-columns:repeat(${n},minmax(0,1fr));grid-template-rows:repeat(${Math.min(Math.max(cards.length, 1), 4)},auto)">${cards.join('') || '<div class="empty">אין כרגע</div>'}</div></section>`;
   $('grid').innerHTML = col('נפתחו', 'נשלחו הוראות הפקדה — עד שמופיעים ב-Power BI', '#1f9d55', op, sub[0]) + col('בעבודה', 'בפתיחה אצל צוות האונבורדינג', '#0284c7', wk, sub[1]) + col('בתור', 'Data Received + אושר בציות + חתומים, לפי סדר', '#167398', qu, sub[2]) + col('עוד לא בתור', 'מה חסר כדי להיכנס לתור · צהוב = כמעט', '#d70015', nq, sub[3]);
-  if (ADMIN) {
+  if (false) {
     const rows = notq.map(r => `<div class="arow" data-id="${esc(rid(r))}"><div><b>${esc(r.company_name)}</b> · ${rep(r)}<div class="chips">${mis(r)}</div></div><button class="go sm" data-ins="1">⤒ הכנס לתור</button></div>`).join('');
     $('admin').innerHTML = `<h3>לא בתור — להכניס לתור (${notq.length})</h3><p class="sub">נכנס לסוף התור, ואז אפשר להזיז אותו עם ▲▼. מסומן "התערבות מנהל".</p>${rows || '<div class="empty">כל החשבונות כבר בתור</div>'}`;
   }
@@ -131,17 +136,19 @@ let saveT = null;
 function move(id, a) {
   const { queue, notq, key } = columns();
   const all = [...queue, ...notq], r = all.find(x => rid(x) === id); if (!r) return;
-  if (a === 'reset') { delete OV[id]; return after(); }
+  if (a === 'reset') { const m = OV[id] && OV[id].m; if (m) OV[id] = { m }; else delete OV[id]; return after(); }
   let list = queue.some(x => rid(x) === id) ? queue : notq, col = list === queue ? 'queue' : 'notq';
-  if (a === 'in') { list = queue; col = 'queue'; const last = queue[queue.length - 1]; OV[id] = { col, key: last ? key(last) + 1 : 0 }; return after(); }
-  if (a === 'out') { const first = notq[0]; OV[id] = { col: 'notq', key: first ? key(first) - 1 : 1000 }; return after(); }
+  const keepM = o => Object.assign(o, OV[id] && OV[id].m ? { m: OV[id].m } : {});
+  if (a === 'in') { list = queue; col = 'queue'; const last = queue[queue.length - 1]; OV[id] = keepM({ col, key: last ? key(last) + 1 : 0 }); return after(); }
+  if (a === 'out') { const first = notq[0]; OV[id] = keepM({ col: 'notq', key: first ? key(first) - 1 : 1000 }); return after(); }
   const i = list.findIndex(x => rid(x) === id), j = a === 'up' ? i - 1 : i + 1;
   if (j < 0 || j >= list.length) return;
   const nb = list[j], nb2 = list[a === 'up' ? j - 1 : j + 1];
   const k1 = key(nb), k2 = nb2 ? key(nb2) : (a === 'up' ? k1 - 2 : k1 + 2);
-  OV[id] = { col, key: (k1 + k2) / 2 };
+  OV[id] = keepM({ col, key: (k1 + k2) / 2 });
   after();
 }
+function setMonth(id, m) { const o = Object.assign({}, OV[id]); if (m) o.m = m; else delete o.m; if (Object.keys(o).length) OV[id] = o; else delete OV[id]; after(); }
 function after() { render(); status('שומר…'); clearTimeout(saveT); saveT = setTimeout(save, 1200); }
 async function save() {
   try {
@@ -195,10 +202,11 @@ async function load(first) {
   S.updated = s.json.updated_at; render(); tickClock();
 }
 function tickClock() {
+  $('date').textContent = heday(new Date()) + ' · ' + hm(new Date());   // שעון חי למעלה; למטה = מתי הנתונים עודכנו
   if (!S.updated) return; const u = new Date(S.updated), m = (Date.now() - u) / 60000;
-  $('st').textContent = 'עודכן ' + hm(u) + ' · ' + heday(u); $('st').className = m > 180 ? 'old' : '';
+  $('st').textContent = 'נתונים עודכנו ' + hm(u) + ' · ' + heday(u); $('st').className = m > 180 ? 'old' : '';
 }
 enter();
 setTimeout(() => location.reload(), 6 * 3600 * 1000);
 if ('wakeLock' in navigator && !ADMIN) { const w = () => navigator.wakeLock.request('screen').catch(() => {}); w(); document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && w()) }
-document.addEventListener('click', e => { if (!ADMIN) return; const i = e.target.closest('button[data-ins]'); if (i) return move(i.closest('.arow').dataset.id, 'in'); const b = e.target.closest('button[data-a]'); if (b) move(b.closest('.card').dataset.id, b.dataset.a) });
+document.addEventListener('click', e => { if (!ADMIN) return; const mb = e.target.closest('button[data-m]'); if (mb) return setMonth(mb.closest('.card').dataset.id, mb.dataset.m); const i = e.target.closest('button[data-ins]'); if (i) return move(i.closest('.arow').dataset.id, 'in'); const b = e.target.closest('button[data-a]'); if (b) move(b.closest('.card').dataset.id, b.dataset.a) });
