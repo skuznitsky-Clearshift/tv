@@ -57,3 +57,7 @@ body[data-mode=admin] #admin{display:block;margin:28px 2vw 80px;background:#fff;
 .arow{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 0;border-top:1px solid #e5e5ea;font-size:17px}
 .arow .chip{font-size:13px}.arow .chips{margin-top:6px}
 .go.sm{font-size:16px;margin:0;padding:6px 16px;white-space:nowrap}
+
+.mtag{display:inline-block;font-size:calc(.7vw*var(--k));font-weight:800;color:#5b21b6;background:#ede9fe;border-radius:999px;padding:0 calc(.5vw*var(--k));margin:0 0 calc(.3vw*var(--k)) calc(.3vw*var(--k))}
+.mctl button.on{background:#5b21b6;border-color:#5b21b6;color:#fff}.mctl button{border-color:#5b21b6;color:#5b21b6}
+#admin:empty{display:none!important}
