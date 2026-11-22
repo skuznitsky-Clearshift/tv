@@ -108,8 +108,8 @@ function render() {
   // תוספות לפס (22.11): מתויגים להחודש שעוד לא ב-Power BI — ירוק=נפתח, צהוב=בתור/בעבודה, אדום=לא בתור. לא כולל "לא נספר"
   const cm = ym(now), tg = r => !r.no_count && OV[rid(r)] && OV[rid(r)].m === cm;
   const eo = opened.filter(tg).length, ey = work.filter(tg).length + queue.filter(tg).length, er = notq.filter(tg).length;
-  let at = pct(n); const seg = (c, k) => { if (!c) return ''; const w = pct(n + c) - pct(n); const h = `<div class="gx ${k}" style="right:${at}%;width:${Math.max(0, Math.min(w, 100 - at))}%"></div>`; at = Math.min(100, at + w); n += c; return h };
-  const n0 = n; const sx = seg(eo, 'xo') + seg(ey, 'xy') + seg(er, 'xr'); n = n0;
+  let at = pct(n); const seg = (c, k) => { if (!c) return ''; const w = pct(n + c) - pct(n); const h = `<div class="gx ${k}" style="right:${at}%;width:${Math.max(0, Math.min(w, 100 - at))}%">${c}</div>`; at = Math.min(100, at + w); n += c; return h };
+  const n0 = n; const rem = T2 - n0 - eo - ey - er; const sx = seg(eo, 'xo') + seg(ey, 'xy') + seg(er, 'xr') + (rem > 0 && at < 100 ? `<div class="gx xg" style="right:${at}%;width:${100 - at}%">${rem}</div>` : ''); n = n0;
   const ext = (eo || ey || er) ? ` <span class="gleg">${eo ? `<em class="xo">+${eo} נפתחו</em>` : ''}${ey ? `<em class="xy">+${ey} בתור/בעבודה</em>` : ''}${er ? `<em class="xr">+${er} לא בתור</em>` : ''} <small>(מתויגים להחודש)</small></span>` : '';
   $('goal').innerHTML = S.stat.month ? `<div class="gtxt"><b>${n}</b> פעולות ב${MONTHS[now.getMonth()]} · ${n >= T2 ? 'עברנו את יעד המתיחה! 🎉' : n >= T1 ? `היעד הושג! עוד ${T2 - n} ליעד ${T2}` : `עוד ${T1 - n} ליעד ${T1}`}${ext}</div><div class="gtrack"><div class="gfill${n >= T1 ? ' done' : ''}" style="width:${pct(n)}%"></div>${sx}<span class="gmk" style="right:${pct(T1)}%"><i>${T1}</i></span><span class="gmk g2" style="right:calc(100% - 2px)"><i>${T2}</i></span></div><div class="greps">${reps}</div>` : '';
   $('date').textContent = heday(now) + ' · ' + hm(now);
