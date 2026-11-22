@@ -101,7 +101,11 @@ function render() {
   const { opened, work, queue, notq } = columns();
   const now = new Date();
   const keys = new Set((S.stat.powerbi_clients || []).map(c => norm(c.name)));
-  $('goal').textContent = S.stat.month ? `יש ${keys.size} פעולות מתוך היעד של ${S.stat.target || 45} ל${MONTHS[now.getMonth()]}` : '';
+  // פס יעד (22.11): פעולות החודש מ-Power BI מול יעד 45 ויעד מתיחה 60, ופילוח לפי איש מכירות
+  const n = keys.size, T1 = S.stat.target || 45, T2 = S.stat.stretch || 60, pct = x => Math.min(x / T2, 1) * 100;
+  const by = {}; (S.stat.powerbi_clients || []).forEach(c => { const k = REP[c.salesperson] || c.salesperson || 'אחר'; by[k] = (by[k] || 0) + 1 });
+  const reps = Object.entries(by).sort((a, b) => b[1] - a[1]).map(([k, c]) => `<span>${esc(k)} <b>${c}</b></span>`).join('');
+  $('goal').innerHTML = S.stat.month ? `<div class="gtxt"><b>${n}</b> פעולות ב${MONTHS[now.getMonth()]} · ${n >= T2 ? 'עברנו את יעד המתיחה! 🎉' : n >= T1 ? `היעד הושג! עוד ${T2 - n} ליעד ${T2}` : `עוד ${T1 - n} ליעד ${T1}`}</div><div class="gtrack"><div class="gfill${n >= T1 ? ' done' : ''}" style="width:${pct(n)}%"></div><span class="gmk" style="right:${pct(T1)}%"><i>${T1}</i></span><span class="gmk g2" style="right:calc(100% - 2px)"><i>${T2}</i></span></div><div class="greps">${reps}</div>` : '';
   $('date').textContent = heday(now) + ' · ' + hm(now);
   const nc = r => r.no_count ? '<div class="nc">-לא נספר בסגירות-</div>' : '';
   const badge = r => r.action === 'out' ? (r.voucher_funded ? 'יש פעולה ושובר, כסף יצא' : 'יש פעולה, כסף יצא') : r.action === 'funded' && r.voucher_funded ? 'יש פעולה ושובר עם מימון' : r.voucher_funded ? 'יש שובר עם מימון' : '';
@@ -178,7 +182,7 @@ async function enter() {
     const a = ls.get('oq_admin');
     if (!a) return pad('ניהול התור', 'קוד מנהל', v => { ls.set('oq_admin', v); enter() });
     try { const j = (await fetchFile('a.json')).json; if (!j) throw new Error('github 404'); ls.set('oq_code', (await dec(await derive(a), j)).view) }
-    catch (e) { ls.set('oq_admin', ''); if (/github 40[13]/.test(e.message)) ls.set('oq_tok', ''); return pad('ניהול התור', /github 40[13]/.test(e.message) ? 'מפתח הגישה של גיטהאב לא תקף — הזן קוד ואז מפתח חדש' : /github 404/.test(e.message) ? 'קובץ ההגדרות (a.json) עוד לא הועלה לריפו' : (e.name === 'OperationError' ? 'קוד מנהל שגוי — נסה שוב' : 'לא הצלחתי לבדוק את הקוד (' + e.message + ') — נסה שוב'), v => { ls.set('oq_admin', v); enter() }) }
+    catch (e) { ls.set('oq_admin', ''); if (/github 40[13]/.test(e.message)) ls.set('oq_tok', ''); return pad('ניהול התור', /github 40[13]/.test(e.message) ? 'מפתח הגישה של גיטהאב לא תקף — הזן קוד ואז מפתח חדש' : /github 404/.test(e.message) ? 'קובץ ההגדרות (a.json) עוד לא הועלה לריפו' : 'קוד מנהל שגוי — נסה שוב', v => { ls.set('oq_admin', v); enter() }) }
     if (!ls.get('oq_tok')) {
       $('msg').innerHTML = `<div><div class="t">חיבור לשמירה</div><div class="h">מפתח הגישה של גיטהאב לריפו tv (פעם אחת במכשיר הזה)</div><input id="tk" type="password" style="width:30em;font-size:16px"><br><button id="tb" class="go">שמור</button></div>`;
       $('msg').style.display = 'flex'; $('tb').onclick = () => { ls.set('oq_tok', $('tk').value.trim()); enter() }; return;
