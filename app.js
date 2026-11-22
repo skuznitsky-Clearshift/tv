@@ -90,7 +90,7 @@ const ctl = (r, col) => !ADMIN || !col ? '' : `<div class="ctl">${col === 'queue
 const moved = r => { const o = OV[rid(r)]; return !!(o && (o.col || o.key != null)) };
 // תיוג חודש ע"י מנהל (22.11): לאיזה חודש החשבון נספר בסגירות — החודש / החודש הבא
 const ym = (d, add = 0) => { const x = new Date(d.toLocaleString('en-US', tz)); x.setDate(1); x.setMonth(x.getMonth() + add); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') };
-const mtag = r => { const m = OV[rid(r)] && OV[rid(r)].m; if (!m) return ''; const [y, mo] = m.split('-').map(Number); return `<div class="mtag">📅 נספר ל${MONTHS[mo - 1]}</div>` };
+const mtag = r => { const m = OV[rid(r)] && OV[rid(r)].m; if (!m) return ''; return m === ym(new Date()) ? `<div class="mtag cur">📅 החודש</div>` : m === ym(new Date(), 1) ? `<div class="mtag nxt">📅 לחודש הבא</div>` : `<div class="mtag">📅 נספר ל${MONTHS[Number(m.split('-')[1]) - 1]}</div>` };
 const mctl = r => { if (!ADMIN) return ''; const m = OV[rid(r)] && OV[rid(r)].m, a = ym(new Date()), b = ym(new Date(), 1); const btn = (v, t) => `<button data-m="${v}" class="${m === v ? 'on' : ''}">${t}</button>`; return `<div class="ctl mctl">${btn(a, 'החודש')}${btn(b, 'חודש הבא')}${m ? '<button data-m="">✕</button>' : ''}</div>` };
 const mgr = r => moved(r) ? `<div class="mgr">התערבות מנהל${ADMIN ? ' <button data-a="reset" title="החזר למקום הטבעי">✕</button>' : ''}</div>` : '';
 
@@ -102,10 +102,16 @@ function render() {
   const now = new Date();
   const keys = new Set((S.stat.powerbi_clients || []).map(c => norm(c.name)));
   // פס יעד (22.11): פעולות החודש מ-Power BI מול יעד 45 ויעד מתיחה 60, ופילוח לפי איש מכירות
-  const n = keys.size, T1 = S.stat.target || 45, T2 = S.stat.stretch || 60, pct = x => Math.min(x / T2, 1) * 100;
+  let n = keys.size; const T1 = S.stat.target || 45, T2 = S.stat.stretch || 60, pct = x => Math.min(x / T2, 1) * 100;
   const by = {}; (S.stat.powerbi_clients || []).forEach(c => { const k = REP[c.salesperson] || c.salesperson || 'אחר'; by[k] = (by[k] || 0) + 1 });
   const reps = Object.entries(by).sort((a, b) => b[1] - a[1]).map(([k, c]) => `<span>${esc(k)} <b>${c}</b></span>`).join('');
-  $('goal').innerHTML = S.stat.month ? `<div class="gtxt"><b>${n}</b> פעולות ב${MONTHS[now.getMonth()]} · ${n >= T2 ? 'עברנו את יעד המתיחה! 🎉' : n >= T1 ? `היעד הושג! עוד ${T2 - n} ליעד ${T2}` : `עוד ${T1 - n} ליעד ${T1}`}</div><div class="gtrack"><div class="gfill${n >= T1 ? ' done' : ''}" style="width:${pct(n)}%"></div><span class="gmk" style="right:${pct(T1)}%"><i>${T1}</i></span><span class="gmk g2" style="right:calc(100% - 2px)"><i>${T2}</i></span></div><div class="greps">${reps}</div>` : '';
+  // תוספות לפס (22.11): מתויגים להחודש שעוד לא ב-Power BI — ירוק=נפתח, צהוב=בתור/בעבודה, אדום=לא בתור. לא כולל "לא נספר"
+  const cm = ym(now), tg = r => !r.no_count && OV[rid(r)] && OV[rid(r)].m === cm;
+  const eo = opened.filter(tg).length, ey = work.filter(tg).length + queue.filter(tg).length, er = notq.filter(tg).length;
+  let at = pct(n); const seg = (c, k) => { if (!c) return ''; const w = pct(n + c) - pct(n); const h = `<div class="gx ${k}" style="right:${at}%;width:${Math.max(0, Math.min(w, 100 - at))}%"></div>`; at = Math.min(100, at + w); n += c; return h };
+  const n0 = n; const sx = seg(eo, 'xo') + seg(ey, 'xy') + seg(er, 'xr'); n = n0;
+  const ext = (eo || ey || er) ? ` <span class="gleg">${eo ? `<em class="xo">+${eo} נפתחו</em>` : ''}${ey ? `<em class="xy">+${ey} בתור/בעבודה</em>` : ''}${er ? `<em class="xr">+${er} לא בתור</em>` : ''} <small>(מתויגים להחודש)</small></span>` : '';
+  $('goal').innerHTML = S.stat.month ? `<div class="gtxt"><b>${n}</b> פעולות ב${MONTHS[now.getMonth()]} · ${n >= T2 ? 'עברנו את יעד המתיחה! 🎉' : n >= T1 ? `היעד הושג! עוד ${T2 - n} ליעד ${T2}` : `עוד ${T1 - n} ליעד ${T1}`}${ext}</div><div class="gtrack"><div class="gfill${n >= T1 ? ' done' : ''}" style="width:${pct(n)}%"></div>${sx}<span class="gmk" style="right:${pct(T1)}%"><i>${T1}</i></span><span class="gmk g2" style="right:calc(100% - 2px)"><i>${T2}</i></span></div><div class="greps">${reps}</div>` : '';
   $('date').textContent = heday(now) + ' · ' + hm(now);
   const nc = r => r.no_count ? '<div class="nc">-לא נספר בסגירות-</div>' : '';
   const badge = r => r.action === 'out' ? (r.voucher_funded ? 'יש פעולה ושובר, כסף יצא' : 'יש פעולה, כסף יצא') : r.action === 'funded' && r.voucher_funded ? 'יש פעולה ושובר עם מימון' : r.voucher_funded ? 'יש שובר עם מימון' : '';
