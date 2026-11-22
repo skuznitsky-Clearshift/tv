@@ -75,3 +75,6 @@ body[data-mode=admin] #admin{display:block;margin:28px 2vw 80px;background:#fff;
 .gleg em.xo{color:#1f7a3a;background:#e3f8e8}.gleg em.xy{color:#8a6d00;background:#fff6cc}.gleg em.xr{color:#b3261e;background:#fde4e2}
 .gleg small{color:#86868b;font-weight:400}
 .mtag.cur{color:#1f7a3a!important;background:#e3f8e8!important;font-weight:800}.mtag.nxt{color:#b3261e!important;background:#fde4e2!important;font-weight:800}
+.gx{display:flex;align-items:center;justify-content:center;overflow:hidden;font:800 calc(.75vw*var(--k)) Heebo,sans-serif;color:#fff;line-height:1}.gx.xy{color:#5c4a00}
+.gx.xg{background:transparent;color:#6e6e73;opacity:1}
+.gfill{display:flex;align-items:center;justify-content:center}
