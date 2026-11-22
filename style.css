@@ -61,3 +61,11 @@ body[data-mode=admin] #admin{display:block;margin:28px 2vw 80px;background:#fff;
 .mtag{display:inline-block;font-size:calc(.7vw*var(--k));font-weight:800;color:#5b21b6;background:#ede9fe;border-radius:999px;padding:0 calc(.5vw*var(--k));margin:0 0 calc(.3vw*var(--k)) calc(.3vw*var(--k))}
 .mctl button.on{background:#5b21b6;border-color:#5b21b6;color:#fff}.mctl button{border-color:#5b21b6;color:#5b21b6}
 #admin:empty{display:none!important}
+.goal{display:block;min-width:42vw;background:none;padding:0}
+.gtxt{font-size:calc(1.1vw*var(--k));font-weight:600;color:var(--acc);text-align:center}.gtxt b{font-size:calc(1.5vw*var(--k));font-weight:800}
+.gtrack{position:relative;height:calc(1vw*var(--k));background:#e5e5ea;border-radius:999px;margin:calc(.35vw*var(--k)) 0 calc(1vw*var(--k))}
+.gfill{position:absolute;top:0;bottom:0;right:0;background:#167398;border-radius:999px;transition:width .6s}.gfill.done{background:#1f9d55}
+.gmk{position:absolute;top:calc(-.25vw*var(--k));bottom:calc(-.25vw*var(--k));width:2px;background:#1d1d1f}
+.gmk i{position:absolute;top:100%;left:50%;transform:translateX(-50%);font:800 calc(.7vw*var(--k)) Heebo,sans-serif;font-style:normal;color:#1d1d1f}
+.greps{display:flex;flex-wrap:wrap;justify-content:center;gap:calc(.35vw*var(--k));font-size:calc(.75vw*var(--k));color:#3a3a3c}
+.greps span{background:#fff;border-radius:999px;padding:0 calc(.55vw*var(--k));box-shadow:0 1px 2px rgba(0,0,0,.08)}.greps b{color:var(--acc)}
