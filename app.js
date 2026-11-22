@@ -86,7 +86,7 @@ function vch(r) {
   if (!r.voucher_usd) return `<div class="chips">${chip('אין שובר', 'bad')}</div>`;
   return `<div class="chips"><span class="lbl">שובר:</span>${chip('$' + Number(r.voucher_usd).toLocaleString('en-US'), 'ok')}${r.voucher_note ? `<span class="lbl">${esc(r.voucher_note)}</span>` : ''}</div>`;
 }
-const ctl = (r, col) => !ADMIN || !col ? '' : `<div class="ctl">${col === 'queue' ? '<button data-a="up" title="קדם">▲</button><button data-a="down" title="הורד">▼</button><button data-a="out" title="הוצא מהתור">⤓</button>' : '<button data-a="in" title="הכנס לתור">⤒ לתור</button><button data-a="up">▲</button><button data-a="down">▼</button>'}</div>`;
+const ctl = (r, col) => !ADMIN || !col ? '' : `<div class="ctl">${col === 'queue' ? '<button data-a="up" title="קדם">▲</button><button data-a="down" title="הורד">▼</button><button data-a="out" title="הוצא מהתור">⤓</button>' : '<button data-a="in" title="הכנס לתור">⤒ לתור</button>'}</div>`;
 const moved = r => { const o = OV[rid(r)]; return !!(o && (o.col || o.key != null)) };
 // תיוג חודש ע"י מנהל (22.11): לאיזה חודש החשבון נספר בסגירות — החודש / החודש הבא
 const ym = (d, add = 0) => { const x = new Date(d.toLocaleString('en-US', tz)); x.setDate(1); x.setMonth(x.getMonth() + add); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') };
