@@ -78,3 +78,9 @@ body[data-mode=admin] #admin{display:block;margin:28px 2vw 80px;background:#fff;
 .gx{display:flex;align-items:center;justify-content:center;overflow:hidden;font:800 calc(.75vw*var(--k)) Heebo,sans-serif;color:#fff;line-height:1}.gx.xy{color:#5c4a00}
 .gx.xg{background:transparent;color:#6e6e73;opacity:1}
 .gfill{display:flex;align-items:center;justify-content:center}
+/* צבעי פס יעד (ספיר 23.11): נסגר (Power BI) = ירוק, מתויג להחודש ונפתח = כחול, לא בתור = כתום */
+.gfill,.gfill.done{background:#1f9d55}
+.gx.xo{background:#167398;opacity:1}
+.gx.xr{background:#ff9500;opacity:1}
+.gleg em.xo{color:#0f4d66;background:#e1f0f6}
+.gleg em.xr{color:#a35a00;background:#ffecd6}
